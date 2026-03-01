@@ -2,10 +2,10 @@ import { Storage } from "@plasmohq/storage"
 import type { PlasmoCSConfig } from "plasmo"
 
 // Phase 11: Plasmo Native Asset Bundling via url: schema
-import dysRegular from "url:~assets/fonts/OpenDyslexic-Regular.otf"
-import dysItalic from "url:~assets/fonts/OpenDyslexic-Italic.otf"
-import dysBold from "url:~assets/fonts/OpenDyslexic-Bold.otf"
-import dysBoldItalic from "url:~assets/fonts/OpenDyslexic-BoldItalic.otf"
+import dysRegular from "url:./assets/fonts/OpenDyslexic-Regular.otf"
+import dysItalic from "url:./assets/fonts/OpenDyslexic-Italic.otf"
+import dysBold from "url:./assets/fonts/OpenDyslexic-Bold.otf"
+import dysBoldItalic from "url:./assets/fonts/OpenDyslexic-BoldItalic.otf"
 
 export const config: PlasmoCSConfig = {
     matches: ["<all_urls>"]
