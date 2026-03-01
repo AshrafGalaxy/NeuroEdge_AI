@@ -229,13 +229,39 @@ async function updateDyslexiaStyle() {
     styleEl.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap');
       
+      /* Phase 10: Localizing OpenDyslexic Off-Grid Assets */
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Regular.otf")}') format('opentype');
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Italic.otf")}') format('opentype');
+        font-weight: 400;
+        font-style: italic;
+      }
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Bold.otf")}') format('opentype');
+        font-weight: 700;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-BoldItalic.otf")}') format('opentype');
+        font-weight: 700;
+        font-style: italic;
+      }
+
       * {
         animation: none !important;
         transition: none !important;
       }
 
       body, article, main, p, h1, h2, h3, h4, span, div, a, li { 
-        font-family: '${font}', 'OpenDyslexic', sans-serif !important; 
+        font-family: ${font === 'OpenDyslexic' ? "'OpenDyslexicLocal'" : `'${font}'`}, sans-serif !important; 
         font-weight: ${weight} !important;
         letter-spacing: 0.12em !important; 
         word-spacing: 0.16em !important;
