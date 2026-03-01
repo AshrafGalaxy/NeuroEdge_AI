@@ -13,6 +13,8 @@ const ADHD_STYLE_ID = "neuro-assist-adhd-ruler"
 try {
     storage.watch({
         dyslexiaMode: (c) => toggleDyslexiaMode(c.newValue),
+        dyslexiaFont: () => updateDyslexiaStyle(),
+        dyslexiaWeight: () => updateDyslexiaStyle(),
         adhdMode: (c) => toggleBionicReading(c.newValue),
         readabilityMode: (c) => toggleReadabilityMode(c.newValue)
     })
@@ -112,15 +114,26 @@ function applyBionicReading() {
 }
 
 // -----------------------------------------------------------------------------
-// FEATURE B: DYSLEXIC TYPOGRAPHY OVERHAUL
+// FEATURE B: DYSLEXIC TYPOGRAPHY OVERHAUL (DYNAMIC)
 // -----------------------------------------------------------------------------
-function toggleDyslexiaMode(enable: boolean) {
-    if (enable) {
-        if (document.getElementById(DYSLEXIA_STYLE_ID)) return
-        const style = document.createElement("style")
-        style.id = DYSLEXIA_STYLE_ID
-        style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap');
+let isDyslexiaActive = false;
+
+async function updateDyslexiaStyle() {
+    if (!isDyslexiaActive) return;
+
+    // Default fallback values
+    const font = await storage.get("dyslexiaFont") || "Lexend";
+    const weight = await storage.get("dyslexiaWeight") || 400;
+
+    let styleEl = document.getElementById(DYSLEXIA_STYLE_ID);
+    if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = DYSLEXIA_STYLE_ID;
+        document.head.appendChild(styleEl);
+    }
+
+    styleEl.textContent = `
+      @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap');
       
       * {
         animation: none !important;
@@ -128,7 +141,8 @@ function toggleDyslexiaMode(enable: boolean) {
       }
 
       body, article, main, p, h1, h2, h3, h4, span, div, a, li { 
-        font-family: 'Lexend', 'OpenDyslexic', sans-serif !important; 
+        font-family: '${font}', 'OpenDyslexic', sans-serif !important; 
+        font-weight: ${weight} !important;
         letter-spacing: 0.12em !important; 
         word-spacing: 0.16em !important;
         line-height: 1.8 !important; 
@@ -138,10 +152,15 @@ function toggleDyslexiaMode(enable: boolean) {
       body, article, main, .post-content { 
         background-color: #FAF8F5 !important; 
       }
-    `
-        document.head.appendChild(style)
+    `;
+}
+
+function toggleDyslexiaMode(enable: boolean) {
+    isDyslexiaActive = enable;
+    if (enable) {
+        updateDyslexiaStyle();
     } else {
-        document.getElementById(DYSLEXIA_STYLE_ID)?.remove()
+        document.getElementById(DYSLEXIA_STYLE_ID)?.remove();
     }
 }
 
@@ -157,8 +176,8 @@ function toggleReadabilityMode(enable: boolean) {
         overlay.id = READER_OVERLAY_ID;
         overlay.style.cssText = `
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background-color: #faf9f6; z-index: 2147483646; overflow-y: auto;
-            padding: 60px 20px; box-sizing: border-box; backdrop-filter: blur(10px);
+            background-color: #faf9f6 !important; z-index: 999999 !important; overflow-y: auto;
+            padding: 60px 20px; box-sizing: border-box; backdrop-filter: blur(10px); color: #111827 !important;
         `;
 
         const container = document.createElement('div');
@@ -205,8 +224,10 @@ document.addEventListener("mouseup", (e) => {
         // Removed transition from left/top positioning so it snaps instantly to cursor without sliding
         container.style.cssText = `
             position: absolute !important; top: ${e.pageY - 60}px !important; left: ${e.pageX}px !important;
-            z-index: 2147483647 !important; display: flex !important; gap: 8px !important;
+            z-index: 9999999 !important; display: flex !important; gap: 8px !important;
             transition: none !important; animation: none !important;
+            background-color: #ffffff !important; padding: 6px !important; border-radius: 14px !important;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2) !important; color: #111827 !important;
         `
 
         // Keyframe for subtle pop-in
@@ -236,10 +257,20 @@ document.addEventListener("mouseup", (e) => {
             ev.preventDefault()
             const currentSelection = selection; // Capture text immediately
 
-            btnSimplify.innerText = "⏳ Processing locally..."
+            const originalHTML = btnSimplify.innerHTML;
+            btnSimplify.innerHTML = `<svg style="display:inline; animation:spin 1s linear infinite; margin-right:4px; height:16px; width:16px; color:white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle style="opacity:0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path style="opacity:0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing locally...`
             btnSimplify.style.background = "linear-gradient(135deg, #6366f1, #4f46e5)"
             btnSimplify.style.borderColor = "#4338ca"
             btnSimplify.style.pointerEvents = "none"
+            btnSimplify.disabled = true;
+
+            const restoreButton = () => {
+                btnSimplify.innerHTML = originalHTML;
+                btnSimplify.style.background = "linear-gradient(135deg, #10b981, #059669)";
+                btnSimplify.style.borderColor = "#047857";
+                btnSimplify.style.pointerEvents = "auto";
+                btnSimplify.disabled = false;
+            }
 
             try {
                 if (!chrome?.runtime?.id) throw new Error("Extension context invalidated");
@@ -279,45 +310,113 @@ document.addEventListener("mouseup", (e) => {
         }
 
         // --- BUTTON 2: THE PREMIUM TEXT-TO-SPEECH ---
-        const btnTTS = document.createElement("button")
-        btnTTS.innerHTML = "🔊 Read Aloud"
-        btnTTS.style.cssText = `
-            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
-            color: white; border: 1px solid #5b21b6; border-radius: 12px;
-            padding: 8px 16px; font-weight: 700; cursor: pointer;
-            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4); font-family: inherit;
-            font-size: 14px; display: flex; align-items: center; white-space: nowrap;
+        const ttsControls = document.createElement("div")
+        ttsControls.style.cssText = `
+            display: flex; gap: 2px; background: #111827 !important; border-radius: 12px; padding: 4px;
+            border: 1px solid #374151; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); align-items: center;
         `
-        btnTTS.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
-        btnTTS.onmouseup = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
-        btnTTS.onclick = (ev) => {
+
+        const btnPlay = document.createElement("button")
+        btnPlay.innerHTML = "▶️"
+        btnPlay.style.cssText = "background: transparent; color: white; border: none; cursor: pointer; padding: 4px 8px; font-size: 14px; border-radius: 6px; transition: background 0.1s;"
+        btnPlay.onmouseover = () => btnPlay.style.background = "#374151"
+        btnPlay.onmouseout = () => btnPlay.style.background = "transparent"
+
+        const btnPause = document.createElement("button")
+        btnPause.innerHTML = "⏸️"
+        btnPause.style.cssText = "background: transparent; color: white; border: none; cursor: pointer; padding: 4px 8px; font-size: 14px; border-radius: 6px; transition: background 0.1s;"
+        btnPause.onmouseover = () => btnPause.style.background = "#374151"
+        btnPause.onmouseout = () => btnPause.style.background = "transparent"
+
+        const btnStop = document.createElement("button")
+        btnStop.innerHTML = "⏹️"
+        btnStop.style.cssText = "background: transparent; color: white; border: none; cursor: pointer; padding: 4px 8px; font-size: 14px; border-radius: 6px; transition: background 0.1s;"
+        btnStop.onmouseover = () => btnStop.style.background = "#374151"
+        btnStop.onmouseout = () => btnStop.style.background = "transparent"
+
+        ttsControls.appendChild(btnPlay)
+        ttsControls.appendChild(btnPause)
+        ttsControls.appendChild(btnStop)
+
+        function blockEvents(btn: HTMLButtonElement) {
+            btn.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
+            btn.onmouseup = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
+        }
+        [btnPlay, btnPause, btnStop].forEach(blockEvents);
+
+        let containerSpan: HTMLSpanElement | null = null;
+
+        btnPlay.onclick = (ev) => {
             ev.stopPropagation()
             ev.preventDefault()
 
-            // Premium Local Speech Synthesis API
-            if ('speechSynthesis' in window) {
-                window.speechSynthesis.cancel(); // Stop any currently playing audio
-                const utterance = new SpeechSynthesisUtterance(selection);
-                utterance.rate = 0.9;  // Slightly slower for better comprehension
-                utterance.pitch = 1.0;
+            if (!('speechSynthesis' in window)) {
+                alert("Browser unsupported for TTS");
+                return;
+            }
 
-                // Add UI feedback
-                btnTTS.innerHTML = "🔊 Speaking...";
-                btnTTS.style.background = "linear-gradient(135deg, #f59e0b, #d97706)";
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+                return;
+            }
+            if (window.speechSynthesis.speaking) return;
 
-                utterance.onend = () => {
-                    container.remove();
-                };
+            // Extract native text selection and wrap it to inject dynamic <mark> tags
+            const range = window.getSelection()?.getRangeAt(0);
+            if (range && !containerSpan) {
+                containerSpan = document.createElement("span");
+                containerSpan.style.cssText = "color: inherit; background: transparent;";
+                containerSpan.textContent = selection;
+                range.deleteContents();
+                range.insertNode(containerSpan);
+            }
 
-                window.speechSynthesis.speak(utterance);
-            } else {
-                btnTTS.innerHTML = "❌ Browser Unsupported";
+            const utterance = new SpeechSynthesisUtterance(selection);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.0;
+
+            utterance.onboundary = (event) => {
+                if (event.name === 'word' && containerSpan) {
+                    const before = selection.substring(0, event.charIndex);
+                    // Approximate word length extraction
+                    const substr = selection.substring(event.charIndex);
+                    const match = substr.match(/^\\S+/);
+                    const wordLen = match ? match[0].length : (event.charLength || 1);
+
+                    const word = selection.substring(event.charIndex, event.charIndex + wordLen);
+                    const after = selection.substring(event.charIndex + wordLen);
+
+                    containerSpan.innerHTML = `${before}<mark style="background-color: #fef08a !important; color: #111827 !important; border-radius: 2px !important; padding: 0 2px !important;">${word}</mark>${after}`;
+                }
+            };
+
+            utterance.onend = () => {
+                if (containerSpan) {
+                    containerSpan.innerHTML = selection; // strip highlights
+                }
                 setTimeout(() => container.remove(), 2000);
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        btnPause.onclick = (ev) => {
+            ev.stopPropagation()
+            ev.preventDefault()
+            window.speechSynthesis.pause();
+        }
+
+        btnStop.onclick = (ev) => {
+            ev.stopPropagation()
+            ev.preventDefault()
+            window.speechSynthesis.cancel();
+            if (containerSpan) {
+                containerSpan.innerHTML = selection; // strip highlights
             }
         }
 
         container.appendChild(btnSimplify)
-        container.appendChild(btnTTS)
+        container.appendChild(ttsControls)
         document.body.appendChild(container)
     }
 })

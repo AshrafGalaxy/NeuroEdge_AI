@@ -8,6 +8,8 @@ export default function IndexPopup() {
   const [adhdMode, setAdhdMode] = useStorage("adhdMode", false)
   const [dyslexiaMode, setDyslexiaMode] = useStorage("dyslexiaMode", false)
   const [readabilityMode, setReadabilityMode] = useStorage("readabilityMode", false)
+  const [dyslexiaFont, setDyslexiaFont] = useStorage("dyslexiaFont", "Lexend")
+  const [dyslexiaWeight, setDyslexiaWeight] = useStorage("dyslexiaWeight", 400)
 
   return (
     <div className="w-[340px] p-6 bg-gradient-to-b from-zinc-900 to-zinc-950 text-zinc-50 font-sans shadow-2xl border border-zinc-800 rounded-xl relative overflow-hidden">
@@ -25,14 +27,48 @@ export default function IndexPopup() {
       </div>
 
       <div className="space-y-4">
-        <ToggleRow
-          icon={<Type className="w-5 h-5 text-indigo-400" />}
-          title="Dyslexic Typography"
-          description="Lexend font + low glare bg"
-          state={dyslexiaMode}
-          setState={setDyslexiaMode}
-          activeColor="focus:ring-indigo-500 data-[state=checked]:bg-indigo-500"
-        />
+        <div className="space-y-2">
+          <ToggleRow
+            icon={<Type className="w-5 h-5 text-indigo-400" />}
+            title="Dyslexic Typography"
+            description="Custom font & spacing"
+            state={dyslexiaMode}
+            setState={setDyslexiaMode}
+            activeColor="focus:ring-indigo-500 data-[state=checked]:bg-indigo-500"
+          />
+          {dyslexiaMode && (
+            <div className="pl-12 pr-4 py-2 space-y-3 animate-in slide-in-from-top-2 fade-in duration-200">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-zinc-400">Font</span>
+                <select
+                  value={dyslexiaFont}
+                  onChange={(e) => setDyslexiaFont(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 text-zinc-100 text-xs rounded px-2 py-1 outline-none focus:border-indigo-500"
+                >
+                  <option value="Lexend">Lexend</option>
+                  <option value="OpenDyslexic">OpenDyslexic</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Comic Sans MS">Comic Sans</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-zinc-400">
+                  <span>Weight</span>
+                  <span>{dyslexiaWeight}</span>
+                </div>
+                <input
+                  type="range"
+                  min="300"
+                  max="900"
+                  step="100"
+                  value={dyslexiaWeight}
+                  onChange={(e) => setDyslexiaWeight(parseInt(e.target.value))}
+                  className="w-full h-1 bg-zinc-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                />
+              </div>
+            </div>
+          )}
+        </div>
 
         <ToggleRow
           icon={<Brain className="w-5 h-5 text-fuchsia-400" />}
