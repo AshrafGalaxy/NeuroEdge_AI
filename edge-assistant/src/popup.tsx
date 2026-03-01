@@ -10,6 +10,7 @@ export default function IndexPopup() {
   const [readabilityMode, setReadabilityMode] = useStorage("readabilityMode", false)
   const [dyslexiaFont, setDyslexiaFont] = useStorage("dyslexiaFont", "Lexend")
   const [dyslexiaWeight, setDyslexiaWeight] = useStorage("dyslexiaWeight", 400)
+  const [history] = useStorage<any[]>("simplificationHistory", [])
 
   return (
     <div className="w-[340px] p-6 bg-gradient-to-b from-zinc-900 to-zinc-950 text-zinc-50 font-sans shadow-2xl border border-zinc-800 rounded-xl relative overflow-hidden">
@@ -89,7 +90,32 @@ export default function IndexPopup() {
         />
       </div>
 
-      <div className="mt-8 pt-4 border-t border-zinc-800/80 flex justify-between items-center group cursor-default">
+      {/* Phase 2: Simplification History */}
+      {history && history.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest pl-1 mb-2">Recent Simplifications</h3>
+          <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1 pb-1">
+            {history.map((item, idx) => {
+              let hostname = item.url;
+              try { hostname = new URL(item.url).hostname } catch (e) { }
+              return (
+                <div key={idx} className="bg-zinc-800/40 border border-zinc-700/50 p-2.5 rounded-lg text-left shadow-sm">
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-[9px] text-zinc-500 font-medium truncate" title={item.url}>{hostname}</span>
+                    <span className="text-[9px] text-zinc-600">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <p className="text-[11px] text-zinc-300 line-clamp-2 italic opacity-90 mb-2 border-l-2 border-zinc-600 pl-2 leading-relaxed">"{item.original}"</p>
+                  <div className="text-[11px] text-emerald-300 font-medium bg-emerald-500/10 p-2 rounded shadow-inner leading-relaxed">
+                    ✨ {item.simplified}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 pt-4 border-t border-zinc-800/80 flex justify-between items-center group cursor-default">
         <div className="flex items-center gap-2 text-xs text-zinc-400 font-medium transition-colors group-hover:text-zinc-300">
           <Cpu className="w-4 h-4 text-emerald-500" />
           <span className="tracking-wide">AMD ENGINE</span>

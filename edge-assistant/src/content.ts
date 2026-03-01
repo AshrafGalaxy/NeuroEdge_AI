@@ -25,13 +25,82 @@ try {
 window.addEventListener("load", async () => {
     try {
         if (!chrome?.runtime?.id) return;
+        
+        // Phase 3: Kill Ghost Audio
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+        }
+
         if (await storage.get("dyslexiaMode")) toggleDyslexiaMode(true)
         if (await storage.get("adhdMode")) toggleBionicReading(true)
         if (await storage.get("readabilityMode")) toggleReadabilityMode(true)
+        
+        // Phase 4: Smart Session Resume
+        const sessionKey = `session_${window.location.href}`;
+        const session = await storage.get(sessionKey);
+        if (session && (session.scrollY > 0 || (session.textPairs && session.textPairs.length > 0))) {
+            showResumeToast(session, sessionKey);
+        }
     } catch (e) {
         console.warn("Could not load storage on boot", e);
     }
 })
+
+// Phase 4 State
+let activeSessionPairs: { original: string, simplified: string }[] = [];
+
+window.addEventListener("beforeunload", () => {
+    if (activeSessionPairs.length > 0 || window.scrollY > 0) {
+        storage.set(`session_${window.location.href}`, {
+            scrollY: window.scrollY,
+            textPairs: activeSessionPairs
+        });
+    }
+});
+
+function showResumeToast(session: any, sessionKey: string) {
+    const toast = document.createElement("div");
+    toast.style.cssText = `
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999999;
+        background: #111827; border: 1px solid #374151; color: white;
+        padding: 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        display: flex; flex-direction: column; gap: 12px; font-family: system-ui, sans-serif;
+    `
+    toast.innerHTML = `
+        <div style="font-weight: 600; font-size: 14px;">Resume your previous reading session?</div>
+        <div style="display: flex; gap: 8px;">
+            <button id="neuro-resume-yes" style="flex: 1; background: #10b981; color: white; border: none; border-radius: 6px; padding: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Yes</button>
+            <button id="neuro-resume-no" style="flex: 1; background: #374151; color: white; border: none; border-radius: 6px; padding: 6px; font-weight: 600; cursor: pointer; font-size: 13px;">Start Fresh</button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+
+    document.getElementById("neuro-resume-yes")!.onclick = async () => {
+        window.scrollTo({ top: session.scrollY, behavior: 'smooth' });
+        
+        if (session.textPairs && session.textPairs.length > 0) {
+            session.textPairs.forEach((pair: any) => {
+                const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
+                    acceptNode: (n) => n.nodeValue?.includes(pair.original) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+                });
+                const node = walker.nextNode();
+                if (node && node.parentNode) {
+                    const span = document.createElement("span");
+                    span.innerHTML = node.nodeValue!.replace(pair.original, `<span style="background: linear-gradient(to right, #ecfdf5, #d1fae5); color: #064e3b; padding: 4px 8px; border-radius: 8px; font-weight: 600; border-bottom: 2px solid #10b981;"> ${pair.simplified} </span>`);
+                    node.parentNode.replaceChild(span, node);
+                    activeSessionPairs.push(pair);
+                }
+            });
+        }
+        toast.remove();
+        await storage.remove(sessionKey);
+    };
+
+    document.getElementById("neuro-resume-no")!.onclick = async () => {
+        toast.remove();
+        await storage.remove(sessionKey);
+    };
+}
 
 // -----------------------------------------------------------------------------
 // FEATURE A: BIONIC READING + READING RULER (ADHD Focus)
@@ -257,6 +326,8 @@ document.addEventListener("mouseup", (e) => {
             ev.preventDefault()
             const currentSelection = selection; // Capture text immediately
 
+            if (btnSimplify.disabled) return;
+
             const originalHTML = btnSimplify.innerHTML;
             btnSimplify.innerHTML = `<svg style="display:inline; animation:spin 1s linear infinite; margin-right:4px; height:16px; width:16px; color:white;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle style="opacity:0.25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path style="opacity:0.75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing locally...`
             btnSimplify.style.background = "linear-gradient(135deg, #6366f1, #4f46e5)"
@@ -275,37 +346,56 @@ document.addEventListener("mouseup", (e) => {
             try {
                 if (!chrome?.runtime?.id) throw new Error("Extension context invalidated");
 
-                chrome.runtime.sendMessage({ action: "simplify", text: currentSelection }, (data) => {
-                    if (chrome.runtime.lastError) {
-                        btnSimplify.innerText = "❌ Please refresh page"
-                        btnSimplify.style.background = "#ef4444"
-                        setTimeout(() => container.remove(), 2500)
-                        return;
-                    }
-
-                    if (data && data.simplified_text) {
-                        const range = window.getSelection()?.getRangeAt(0)
-                        if (range) {
-                            range.deleteContents()
-                            const resultSpan = document.createElement("span")
-                            resultSpan.style.cssText = `
-                                background: linear-gradient(to right, #ecfdf5, #d1fae5); color: #064e3b;
-                                padding: 4px 8px; border-radius: 8px; font-weight: 600;
-                                border-bottom: 2px solid #10b981; box-shadow: 0 2px 4px rgba(16,185,129,0.1);
-                            `
-                            resultSpan.innerText = " " + data.simplified_text + " "
-                            range.insertNode(resultSpan)
+                const data = await new Promise<any>((resolve, reject) => {
+                    chrome.runtime.sendMessage({ action: "simplify", text: currentSelection }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            reject(chrome.runtime.lastError);
+                        } else {
+                            resolve(response);
                         }
-                    } else if (data && data.error) {
-                        btnSimplify.innerText = "❌ Local LLM Offline"
-                        btnSimplify.style.background = "#ef4444"
+                    });
+                });
+
+                if (data && data.simplified_text) {
+                    const range = window.getSelection()?.getRangeAt(0)
+                    if (range) {
+                        range.deleteContents()
+                        const resultSpan = document.createElement("span")
+                        resultSpan.style.cssText = `
+                            background: linear-gradient(to right, #ecfdf5, #d1fae5); color: #064e3b;
+                            padding: 4px 8px; border-radius: 8px; font-weight: 600;
+                            border-bottom: 2px solid #10b981; box-shadow: 0 2px 4px rgba(16,185,129,0.1);
+                        `
+                        resultSpan.innerText = " " + data.simplified_text + " "
+                        range.insertNode(resultSpan)
+
+                        // Phase 2: Simplification History
+                        try {
+                            const history = await storage.get("simplificationHistory") || [];
+                            history.unshift({
+                                original: currentSelection,
+                                simplified: data.simplified_text,
+                                url: window.location.href,
+                                timestamp: Date.now()
+                            });
+                            await storage.set("simplificationHistory", history.slice(0, 10));
+                        } catch(e) { console.warn("Could not save history", e) }
+
+                        // Phase 4: Track session text
+                        activeSessionPairs.push({ original: currentSelection, simplified: data.simplified_text });
                     }
-                    setTimeout(() => container.remove(), 2500)
-                })
-            } catch (err) {
-                btnSimplify.innerText = "❌ Please refresh page"
-                btnSimplify.style.background = "#ef4444"
+                } else if (data && data.error) {
+                    throw new Error("Local LLM Offline");
+                }
                 setTimeout(() => container.remove(), 2500)
+            } catch (err) {
+                console.error("Simplification error:", err);
+                btnSimplify.innerText = "❌ Processing Failed"
+                btnSimplify.style.background = "#ef4444"
+                btnSimplify.style.borderColor = "#dc2626"
+                setTimeout(() => {
+                    restoreButton();
+                }, 3000)
             }
         }
 
