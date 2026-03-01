@@ -213,7 +213,7 @@ async function updateDyslexiaStyle() {
     if (!isDyslexiaActive) return;
 
     // Default fallback values
-    const font = await storage.get<any>("dyslexiaFont") || "Lexend";
+    const font = await storage.get<any>("dyslexiaFont") || "OpenDyslexic";
     const weight = await storage.get<any>("dyslexiaWeight") || 400;
 
     let styleEl = document.getElementById(DYSLEXIA_STYLE_ID);

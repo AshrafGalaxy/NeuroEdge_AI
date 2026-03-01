@@ -8,7 +8,7 @@ export default function IndexPopup() {
   const [adhdMode, setAdhdMode] = useStorage("adhdMode", false)
   const [dyslexiaMode, setDyslexiaMode] = useStorage("dyslexiaMode", false)
   const [readabilityMode, setReadabilityMode] = useStorage("readabilityMode", false)
-  const [dyslexiaFont, setDyslexiaFont] = useStorage("dyslexiaFont", "Lexend")
+  const [dyslexiaFont, setDyslexiaFont] = useStorage("dyslexiaFont", "OpenDyslexic")
   const [dyslexiaWeight, setDyslexiaWeight] = useStorage("dyslexiaWeight", 400)
   const [history] = useStorage<any[]>("simplificationHistory", [])
   const [globalScope, setGlobalScope] = useStorage("globalScope", true)
