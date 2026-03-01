@@ -1,6 +1,12 @@
 import { Storage } from "@plasmohq/storage"
 import type { PlasmoCSConfig } from "plasmo"
 
+// Phase 11: Plasmo Native Asset Bundling via url: schema
+import dysRegular from "url:~assets/fonts/OpenDyslexic-Regular.otf"
+import dysItalic from "url:~assets/fonts/OpenDyslexic-Italic.otf"
+import dysBold from "url:~assets/fonts/OpenDyslexic-Bold.otf"
+import dysBoldItalic from "url:~assets/fonts/OpenDyslexic-BoldItalic.otf"
+
 export const config: PlasmoCSConfig = {
     matches: ["<all_urls>"]
 }
@@ -218,10 +224,10 @@ async function updateDyslexiaStyle() {
     }
 
     try {
-        const regularFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Regular.otf")})`, { style: 'normal', weight: '400' });
-        const italicFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Italic.otf")})`, { style: 'italic', weight: '400' });
-        const boldFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Bold.otf")})`, { style: 'normal', weight: '700' });
-        const boldItalicFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-BoldItalic.otf")})`, { style: 'italic', weight: '700' });
+        const regularFont = new FontFace('OpenDyslexicLocal', `url(${dysRegular})`, { style: 'normal', weight: '400' });
+        const italicFont = new FontFace('OpenDyslexicLocal', `url(${dysItalic})`, { style: 'italic', weight: '400' });
+        const boldFont = new FontFace('OpenDyslexicLocal', `url(${dysBold})`, { style: 'normal', weight: '700' });
+        const boldItalicFont = new FontFace('OpenDyslexicLocal', `url(${dysBoldItalic})`, { style: 'italic', weight: '700' });
 
         await Promise.all([regularFont.load(), italicFont.load(), boldFont.load(), boldItalicFont.load()]);
 
@@ -236,6 +242,31 @@ async function updateDyslexiaStyle() {
     styleEl.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap');
       
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${dysRegular}') format('opentype');
+        font-weight: 400;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${dysItalic}') format('opentype');
+        font-weight: 400;
+        font-style: italic;
+      }
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${dysBold}') format('opentype');
+        font-weight: 700;
+        font-style: normal;
+      }
+      @font-face {
+        font-family: 'OpenDyslexicLocal';
+        src: url('${dysBoldItalic}') format('opentype');
+        font-weight: 700;
+        font-style: italic;
+      }
+
       * {
         animation: none !important;
         transition: none !important;
