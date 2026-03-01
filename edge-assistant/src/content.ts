@@ -189,8 +189,13 @@ function toggleReadabilityMode(enable: boolean) {
 // FEATURE D: EDGE AI SIMPLIFIER + PREMIUM TTS
 // -----------------------------------------------------------------------------
 document.addEventListener("mouseup", (e) => {
-    const selection = window.getSelection()?.toString().trim()
     const containerId = "neuro-assist-floating-container"
+    // Escape clause: Ignore clicks on the floating UI itself
+    if ((e.target as HTMLElement)?.closest(`#${containerId}`)) {
+        return;
+    }
+
+    const selection = window.getSelection()?.toString().trim()
     document.getElementById(containerId)?.remove()
 
     if (selection && selection.length > 15) {
@@ -199,9 +204,9 @@ document.addEventListener("mouseup", (e) => {
 
         // Removed transition from left/top positioning so it snaps instantly to cursor without sliding
         container.style.cssText = `
-            position: absolute; top: ${e.pageY - 60}px; left: ${e.pageX}px;
-            z-index: 2147483647; display: flex; gap: 8px;
-            animation: fadeIn 0.15s ease-out forwards;
+            position: absolute !important; top: ${e.pageY - 60}px !important; left: ${e.pageX}px !important;
+            z-index: 2147483647 !important; display: flex !important; gap: 8px !important;
+            transition: none !important; animation: none !important;
         `
 
         // Keyframe for subtle pop-in
@@ -225,9 +230,12 @@ document.addEventListener("mouseup", (e) => {
             font-size: 14px; display: flex; align-items: center; white-space: nowrap;
         `
         btnSimplify.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
+        btnSimplify.onmouseup = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
         btnSimplify.onclick = async (ev) => {
             ev.stopPropagation()
             ev.preventDefault()
+            const currentSelection = selection; // Capture text immediately
+
             btnSimplify.innerText = "⏳ Processing locally..."
             btnSimplify.style.background = "linear-gradient(135deg, #6366f1, #4f46e5)"
             btnSimplify.style.borderColor = "#4338ca"
@@ -236,7 +244,7 @@ document.addEventListener("mouseup", (e) => {
             try {
                 if (!chrome?.runtime?.id) throw new Error("Extension context invalidated");
 
-                chrome.runtime.sendMessage({ action: "simplify", text: selection }, (data) => {
+                chrome.runtime.sendMessage({ action: "simplify", text: currentSelection }, (data) => {
                     if (chrome.runtime.lastError) {
                         btnSimplify.innerText = "❌ Please refresh page"
                         btnSimplify.style.background = "#ef4444"
@@ -281,6 +289,7 @@ document.addEventListener("mouseup", (e) => {
             font-size: 14px; display: flex; align-items: center; white-space: nowrap;
         `
         btnTTS.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
+        btnTTS.onmouseup = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
         btnTTS.onclick = (ev) => {
             ev.stopPropagation()
             ev.preventDefault()
