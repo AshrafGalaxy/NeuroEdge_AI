@@ -22,6 +22,14 @@ try {
             if (!chrome?.runtime?.id) throw new Error("Context invalidated");
             const scope = await storage.get<boolean>("globalScope");
             if (scope === false && document.visibilityState !== "visible") return;
+
+            // Phase 15: sessionStorage overrides for Local Mode caching
+            if (scope === false && document.visibilityState === "visible") {
+                if (key === "dyslexiaMode" || key === "adhdMode" || key === "readabilityMode") {
+                    sessionStorage.setItem(`neuro_local_${key}`, newValue ? "true" : "false");
+                }
+            }
+
             updater(newValue);
         } catch (err) {
             console.warn(`Neuro-Assist: Extension updated. Please refresh the page to use ${key}.`);
@@ -39,6 +47,47 @@ try {
     console.warn("Neuro-Assist Storage watch failed. Extension context may be invalid. Please refresh.", e);
 }
 
+// Phase 15: Autonomous Bootloader for SPA / Reload State Persistence
+async function reapplyActiveModes() {
+    try {
+        if (!chrome?.runtime?.id) return;
+
+        const scope = await storage.get<boolean>("globalScope");
+        const isGlobal = scope !== false;
+
+        const dyslexiaActive = isGlobal ? await storage.get<boolean>("dyslexiaMode") : sessionStorage.getItem("neuro_local_dyslexiaMode") === "true";
+        const adhdActive = isGlobal ? await storage.get<boolean>("adhdMode") : sessionStorage.getItem("neuro_local_adhdMode") === "true";
+        const readabilityActive = isGlobal ? await storage.get<boolean>("readabilityMode") : sessionStorage.getItem("neuro_local_readabilityMode") === "true";
+
+        if (dyslexiaActive) toggleDyslexiaMode(true);
+        if (adhdActive) toggleBionicReading(true);
+        if (readabilityActive) toggleReadabilityMode(true);
+    } catch (e) {
+        console.warn("Could not reapply active modes.", e);
+    }
+}
+
+// Phase 15: Single Page Application (SPA) Tracking
+let lastUrl = location.href;
+new MutationObserver(() => {
+    const url = location.href;
+    if (url !== lastUrl) {
+        lastUrl = url;
+        setTimeout(reapplyActiveModes, 100); // 100ms buffer for React/Next.js to paint DOM
+    }
+}).observe(document, { subtree: true, childList: true });
+
+window.addEventListener("popstate", () => {
+    setTimeout(reapplyActiveModes, 100);
+});
+
+// Run bootloader early if possible
+if (document.readyState === "complete" || document.readyState === "interactive") {
+    setTimeout(reapplyActiveModes, 1);
+} else {
+    document.addEventListener("DOMContentLoaded", reapplyActiveModes);
+}
+
 window.addEventListener("load", async () => {
     try {
         if (!chrome?.runtime?.id) return;
@@ -46,15 +95,6 @@ window.addEventListener("load", async () => {
         // Phase 3: Kill Ghost Audio
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-        }
-
-        // Phase 9: Global Scope Local Preference Check
-        const scope = await storage.get<boolean>("globalScope");
-        // If not explicitly Local (false), default is Global
-        if (scope !== false) {
-            if (await storage.get<boolean>("dyslexiaMode")) toggleDyslexiaMode(true)
-            if (await storage.get<boolean>("adhdMode")) toggleBionicReading(true)
-            if (await storage.get<boolean>("readabilityMode")) toggleReadabilityMode(true)
         }
 
         // Phase 4: Smart Session Resume
