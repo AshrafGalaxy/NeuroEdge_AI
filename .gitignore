@@ -1,0 +1,8 @@
+edge-assistant/node_modules/
+edge-assistant/build/
+edge-assistant/.plasmo/
+edge-backend/venv/
+edge-backend/__pycache__/
+*.pyc
+.env
+.DS_Store

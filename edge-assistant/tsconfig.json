@@ -1,0 +1,26 @@
+{
+  "extends": "plasmo/templates/tsconfig.base",
+  "exclude": [
+    "node_modules"
+  ],
+  "include": [
+    ".plasmo/index.d.ts",
+    "./**/*.ts",
+    "./**/*.tsx"
+  ],
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "target": "esnext",
+    "module": "esnext",
+    "skipLibCheck": true,
+    "strict": false,
+    "paths": {
+      "~*": [
+        "./src/*"
+      ]
+    },
+    "baseUrl": "."
+  }
+}
