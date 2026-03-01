@@ -8,8 +8,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             body: JSON.stringify({ text: request.text })
         })
             .then(res => res.json())
-            .then(data => sendResponse(data))
-            .catch(err => sendResponse({ error: err.toString() }))
+            .then(data => {
+                try {
+                    sendResponse(data);
+                } catch (e) {
+                    console.warn("Could not send response:", e);
+                }
+            })
+            .catch(err => {
+                try {
+                    sendResponse({ error: err.toString() });
+                } catch (e) {
+                    console.warn("Could not send error response:", e);
+                }
+            });
 
         // Return true to indicate we wish to send a response asynchronously
         return true

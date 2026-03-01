@@ -10,16 +10,25 @@ const DYSLEXIA_STYLE_ID = "neuro-assist-dyslexia"
 const READER_OVERLAY_ID = "neuro-assist-reader-overlay"
 const ADHD_STYLE_ID = "neuro-assist-adhd-ruler"
 
-storage.watch({
-    dyslexiaMode: (c) => toggleDyslexiaMode(c.newValue),
-    adhdMode: (c) => toggleBionicReading(c.newValue),
-    readabilityMode: (c) => toggleReadabilityMode(c.newValue)
-})
+try {
+    storage.watch({
+        dyslexiaMode: (c) => toggleDyslexiaMode(c.newValue),
+        adhdMode: (c) => toggleBionicReading(c.newValue),
+        readabilityMode: (c) => toggleReadabilityMode(c.newValue)
+    })
+} catch (e) {
+    console.warn("Storage watch failed, context may be invalid:", e);
+}
 
 window.addEventListener("load", async () => {
-    if (await storage.get("dyslexiaMode")) toggleDyslexiaMode(true)
-    if (await storage.get("adhdMode")) toggleBionicReading(true)
-    if (await storage.get("readabilityMode")) toggleReadabilityMode(true)
+    try {
+        if (!chrome?.runtime?.id) return;
+        if (await storage.get("dyslexiaMode")) toggleDyslexiaMode(true)
+        if (await storage.get("adhdMode")) toggleBionicReading(true)
+        if (await storage.get("readabilityMode")) toggleReadabilityMode(true)
+    } catch (e) {
+        console.warn("Could not load storage on boot", e);
+    }
 })
 
 // -----------------------------------------------------------------------------
@@ -207,7 +216,18 @@ document.addEventListener("mouseup", (e) => {
             btn.style.pointerEvents = "none"
 
             try {
+                if (!chrome?.runtime?.id) {
+                    throw new Error("Extension context invalidated");
+                }
                 chrome.runtime.sendMessage({ action: "simplify", text: selection }, (data) => {
+                    if (chrome.runtime.lastError) {
+                        btn.innerText = "❌ Please refresh page"
+                        btn.style.background = "#ef4444"
+                        console.warn("Message channel closed or context invalid:", chrome.runtime.lastError);
+                        setTimeout(() => btn.remove(), 2500)
+                        return;
+                    }
+
                     if (data && data.simplified_text) {
                         const range = window.getSelection()?.getRangeAt(0)
                         if (range) {
@@ -228,8 +248,9 @@ document.addEventListener("mouseup", (e) => {
                     setTimeout(() => btn.remove(), 2500)
                 })
             } catch (err) {
-                btn.innerText = "❌ Extension Error"
+                btn.innerText = "❌ Please refresh page"
                 btn.style.background = "#ef4444"
+                console.warn("Extension context invalidated:", err);
                 setTimeout(() => btn.remove(), 2500)
             }
         })
