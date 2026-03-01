@@ -38,14 +38,13 @@ function toggleBionicReading(enable: boolean) {
     if (enable) {
         applyBionicReading()
 
-        // Reading Ruler CSS
         if (!document.getElementById(ADHD_STYLE_ID)) {
             const style = document.createElement("style")
             style.id = ADHD_STYLE_ID
             style.textContent = `
                 article p, article li, article h1, article h2, article h3, article h4,
                 main p, main li, main h1, main h2, main h3, main h4 {
-                    opacity: 0.4;
+                    opacity: 0.6;
                     transition: opacity 0.25s ease-in-out;
                 }
                 article p:hover, article li:hover, article h1:hover, article h2:hover, article h3:hover, article h4:hover,
@@ -88,6 +87,9 @@ function applyBionicReading() {
         const span = document.createElement('span');
         span.className = 'neuro-bionic';
 
+        // Prevent CSS transition bleeding onto our bionic spans
+        span.style.cssText = "transition: none !important; animation: none !important;";
+
         words.forEach(word => {
             if (!word.trim() || word.length === 1) {
                 span.appendChild(document.createTextNode(word));
@@ -95,13 +97,11 @@ function applyBionicReading() {
             }
             const mid = Math.ceil(word.length / 2);
             const b = document.createElement('b');
-            b.style.fontWeight = '900';
-            b.style.color = 'inherit';
+            b.style.cssText = 'font-weight: 900 !important; color: inherit; transition: none !important;';
             b.textContent = word.substring(0, mid);
 
             const lightSpan = document.createElement('span');
-            lightSpan.style.fontWeight = '400';
-            lightSpan.style.opacity = '0.85';
+            lightSpan.style.cssText = 'font-weight: 400 !important; opacity: 0.85 !important; transition: none !important;';
             lightSpan.textContent = word.substring(mid);
 
             span.appendChild(b);
@@ -123,8 +123,8 @@ function toggleDyslexiaMode(enable: boolean) {
       @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600&display=swap');
       
       * {
-        transition: none !important;
         animation: none !important;
+        transition: none !important;
       }
 
       body, article, main, p, h1, h2, h3, h4, span, div, a, li { 
@@ -132,11 +132,11 @@ function toggleDyslexiaMode(enable: boolean) {
         letter-spacing: 0.12em !important; 
         word-spacing: 0.16em !important;
         line-height: 1.8 !important; 
+        color: #333333 !important;
       }
       
-      body { 
-        background-color: #FDF6E3 !important; 
-        color: #333333 !important; 
+      body, article, main, .post-content { 
+        background-color: #FAF8F5 !important; 
       }
     `
         document.head.appendChild(style)
@@ -186,45 +186,61 @@ function toggleReadabilityMode(enable: boolean) {
 }
 
 // -----------------------------------------------------------------------------
-// FEATURE D: EDGE AI SIMPLIFIER (The AMD Hardware Flex)
+// FEATURE D: EDGE AI SIMPLIFIER + PREMIUM TTS
 // -----------------------------------------------------------------------------
 document.addEventListener("mouseup", (e) => {
     const selection = window.getSelection()?.toString().trim()
-    const btnId = "neuro-assist-simplify-btn"
-    document.getElementById(btnId)?.remove()
+    const containerId = "neuro-assist-floating-container"
+    document.getElementById(containerId)?.remove()
 
     if (selection && selection.length > 15) {
-        const btn = document.createElement("button")
-        btn.id = btnId
-        btn.innerHTML = "✨ Simplify (Edge AI)"
-        btn.style.cssText = `
-            position: absolute; top: ${e.pageY - 50}px; left: ${e.pageX}px;
-            z-index: 2147483647; background: linear-gradient(135deg, #10b981, #059669);
+        const container = document.createElement("div")
+        container.id = containerId
+
+        // Removed transition from left/top positioning so it snaps instantly to cursor without sliding
+        container.style.cssText = `
+            position: absolute; top: ${e.pageY - 60}px; left: ${e.pageX}px;
+            z-index: 2147483647; display: flex; gap: 8px;
+            animation: fadeIn 0.15s ease-out forwards;
+        `
+
+        // Keyframe for subtle pop-in
+        const popStyles = document.createElement('style');
+        popStyles.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(5px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(popStyles);
+
+        // --- BUTTON 1: THE LOCAL AMD SIMPLIFIER ---
+        const btnSimplify = document.createElement("button")
+        btnSimplify.innerHTML = "✨ Simplify (Edge AI)"
+        btnSimplify.style.cssText = `
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white; border: 1px solid #047857; border-radius: 12px;
             padding: 8px 16px; font-weight: 700; cursor: pointer;
             box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4); font-family: inherit;
-            font-size: 14px; transition: all 0.2s ease-out; display: flex; align-items: center;
+            font-size: 14px; display: flex; align-items: center; white-space: nowrap;
         `
-
-        btn.onmouseover = () => btn.style.transform = 'translateY(-2px)';
-        btn.onmouseout = () => btn.style.transform = 'translateY(0)';
-
-        btn.addEventListener("click", async () => {
-            btn.innerText = "⏳ Processing locally..."
-            btn.style.background = "linear-gradient(135deg, #6366f1, #4f46e5)"
-            btn.style.borderColor = "#4338ca"
-            btn.style.pointerEvents = "none"
+        btnSimplify.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
+        btnSimplify.onclick = async (ev) => {
+            ev.stopPropagation()
+            ev.preventDefault()
+            btnSimplify.innerText = "⏳ Processing locally..."
+            btnSimplify.style.background = "linear-gradient(135deg, #6366f1, #4f46e5)"
+            btnSimplify.style.borderColor = "#4338ca"
+            btnSimplify.style.pointerEvents = "none"
 
             try {
-                if (!chrome?.runtime?.id) {
-                    throw new Error("Extension context invalidated");
-                }
+                if (!chrome?.runtime?.id) throw new Error("Extension context invalidated");
+
                 chrome.runtime.sendMessage({ action: "simplify", text: selection }, (data) => {
                     if (chrome.runtime.lastError) {
-                        btn.innerText = "❌ Please refresh page"
-                        btn.style.background = "#ef4444"
-                        console.warn("Message channel closed or context invalid:", chrome.runtime.lastError);
-                        setTimeout(() => btn.remove(), 2500)
+                        btnSimplify.innerText = "❌ Please refresh page"
+                        btnSimplify.style.background = "#ef4444"
+                        setTimeout(() => container.remove(), 2500)
                         return;
                     }
 
@@ -242,18 +258,57 @@ document.addEventListener("mouseup", (e) => {
                             range.insertNode(resultSpan)
                         }
                     } else if (data && data.error) {
-                        btn.innerText = "❌ Local LLM Offline"
-                        btn.style.background = "#ef4444"
+                        btnSimplify.innerText = "❌ Local LLM Offline"
+                        btnSimplify.style.background = "#ef4444"
                     }
-                    setTimeout(() => btn.remove(), 2500)
+                    setTimeout(() => container.remove(), 2500)
                 })
             } catch (err) {
-                btn.innerText = "❌ Please refresh page"
-                btn.style.background = "#ef4444"
-                console.warn("Extension context invalidated:", err);
-                setTimeout(() => btn.remove(), 2500)
+                btnSimplify.innerText = "❌ Please refresh page"
+                btnSimplify.style.background = "#ef4444"
+                setTimeout(() => container.remove(), 2500)
             }
-        })
-        document.body.appendChild(btn)
+        }
+
+        // --- BUTTON 2: THE PREMIUM TEXT-TO-SPEECH ---
+        const btnTTS = document.createElement("button")
+        btnTTS.innerHTML = "🔊 Read Aloud"
+        btnTTS.style.cssText = `
+            background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+            color: white; border: 1px solid #5b21b6; border-radius: 12px;
+            padding: 8px 16px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.4); font-family: inherit;
+            font-size: 14px; display: flex; align-items: center; white-space: nowrap;
+        `
+        btnTTS.onmousedown = (ev) => { ev.stopPropagation(); ev.preventDefault(); }
+        btnTTS.onclick = (ev) => {
+            ev.stopPropagation()
+            ev.preventDefault()
+
+            // Premium Local Speech Synthesis API
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Stop any currently playing audio
+                const utterance = new SpeechSynthesisUtterance(selection);
+                utterance.rate = 0.9;  // Slightly slower for better comprehension
+                utterance.pitch = 1.0;
+
+                // Add UI feedback
+                btnTTS.innerHTML = "🔊 Speaking...";
+                btnTTS.style.background = "linear-gradient(135deg, #f59e0b, #d97706)";
+
+                utterance.onend = () => {
+                    container.remove();
+                };
+
+                window.speechSynthesis.speak(utterance);
+            } else {
+                btnTTS.innerHTML = "❌ Browser Unsupported";
+                setTimeout(() => container.remove(), 2000);
+            }
+        }
+
+        container.appendChild(btnSimplify)
+        container.appendChild(btnTTS)
+        document.body.appendChild(container)
     }
 })
