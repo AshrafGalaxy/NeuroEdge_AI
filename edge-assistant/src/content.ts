@@ -12,11 +12,31 @@ const ADHD_STYLE_ID = "neuro-assist-adhd-ruler"
 
 try {
     storage.watch({
-        dyslexiaMode: (c) => toggleDyslexiaMode(c.newValue),
-        dyslexiaFont: () => updateDyslexiaStyle(),
-        dyslexiaWeight: () => updateDyslexiaStyle(),
-        adhdMode: (c) => toggleBionicReading(c.newValue),
-        readabilityMode: (c) => toggleReadabilityMode(c.newValue)
+        dyslexiaMode: async (c) => {
+            const scope = await storage.get<boolean>("globalScope");
+            if (scope === false && document.visibilityState !== "visible") return;
+            toggleDyslexiaMode(c.newValue)
+        },
+        dyslexiaFont: async () => {
+            const scope = await storage.get<boolean>("globalScope");
+            if (scope === false && document.visibilityState !== "visible") return;
+            updateDyslexiaStyle()
+        },
+        dyslexiaWeight: async () => {
+            const scope = await storage.get<boolean>("globalScope");
+            if (scope === false && document.visibilityState !== "visible") return;
+            updateDyslexiaStyle()
+        },
+        adhdMode: async (c) => {
+            const scope = await storage.get<boolean>("globalScope");
+            if (scope === false && document.visibilityState !== "visible") return;
+            toggleBionicReading(c.newValue)
+        },
+        readabilityMode: async (c) => {
+            const scope = await storage.get<boolean>("globalScope");
+            if (scope === false && document.visibilityState !== "visible") return;
+            toggleReadabilityMode(c.newValue)
+        }
     })
 } catch (e) {
     console.warn("Storage watch failed, context may be invalid:", e);
@@ -25,19 +45,24 @@ try {
 window.addEventListener("load", async () => {
     try {
         if (!chrome?.runtime?.id) return;
-        
+
         // Phase 3: Kill Ghost Audio
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
         }
 
-        if (await storage.get("dyslexiaMode")) toggleDyslexiaMode(true)
-        if (await storage.get("adhdMode")) toggleBionicReading(true)
-        if (await storage.get("readabilityMode")) toggleReadabilityMode(true)
-        
+        // Phase 9: Global Scope Local Preference Check
+        const scope = await storage.get<boolean>("globalScope");
+        // If not explicitly Local (false), default is Global
+        if (scope !== false) {
+            if (await storage.get<boolean>("dyslexiaMode")) toggleDyslexiaMode(true)
+            if (await storage.get<boolean>("adhdMode")) toggleBionicReading(true)
+            if (await storage.get<boolean>("readabilityMode")) toggleReadabilityMode(true)
+        }
+
         // Phase 4: Smart Session Resume
         const sessionKey = `session_${window.location.href}`;
-        const session = await storage.get(sessionKey);
+        const session = await storage.get<any>(sessionKey);
         if (session && (session.scrollY > 0 || (session.textPairs && session.textPairs.length > 0))) {
             showResumeToast(session, sessionKey);
         }
@@ -77,7 +102,7 @@ function showResumeToast(session: any, sessionKey: string) {
 
     document.getElementById("neuro-resume-yes")!.onclick = async () => {
         window.scrollTo({ top: session.scrollY, behavior: 'smooth' });
-        
+
         if (session.textPairs && session.textPairs.length > 0) {
             session.textPairs.forEach((pair: any) => {
                 const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {
@@ -191,8 +216,8 @@ async function updateDyslexiaStyle() {
     if (!isDyslexiaActive) return;
 
     // Default fallback values
-    const font = await storage.get("dyslexiaFont") || "Lexend";
-    const weight = await storage.get("dyslexiaWeight") || 400;
+    const font = await storage.get<any>("dyslexiaFont") || "Lexend";
+    const weight = await storage.get<any>("dyslexiaWeight") || 400;
 
     let styleEl = document.getElementById(DYSLEXIA_STYLE_ID);
     if (!styleEl) {
@@ -371,7 +396,7 @@ document.addEventListener("mouseup", (e) => {
 
                         // Phase 2: Simplification History
                         try {
-                            const history = await storage.get("simplificationHistory") || [];
+                            const history = await storage.get<any[]>("simplificationHistory") || [];
                             history.unshift({
                                 original: currentSelection,
                                 simplified: data.simplified_text,
@@ -379,7 +404,7 @@ document.addEventListener("mouseup", (e) => {
                                 timestamp: Date.now()
                             });
                             await storage.set("simplificationHistory", history.slice(0, 10));
-                        } catch(e) { console.warn("Could not save history", e) }
+                        } catch (e) { console.warn("Could not save history", e) }
 
                         // Phase 4: Track session text
                         activeSessionPairs.push({ original: currentSelection, simplified: data.simplified_text });

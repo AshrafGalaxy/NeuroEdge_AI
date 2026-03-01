@@ -1,6 +1,6 @@
 import { useStorage } from "@plasmohq/storage/hook"
 import * as Switch from "@radix-ui/react-switch"
-import { Brain, Type, BookOpen, Cpu } from "lucide-react"
+import { Brain, Type, BookOpen, Cpu, Globe, Lock } from "lucide-react"
 
 import "./style.css"
 
@@ -11,6 +11,7 @@ export default function IndexPopup() {
   const [dyslexiaFont, setDyslexiaFont] = useStorage("dyslexiaFont", "Lexend")
   const [dyslexiaWeight, setDyslexiaWeight] = useStorage("dyslexiaWeight", 400)
   const [history] = useStorage<any[]>("simplificationHistory", [])
+  const [globalScope, setGlobalScope] = useStorage("globalScope", true)
 
   return (
     <div className="w-[340px] p-6 bg-gradient-to-b from-zinc-900 to-zinc-950 text-zinc-50 font-sans shadow-2xl border border-zinc-800 rounded-xl relative overflow-hidden">
@@ -28,6 +29,30 @@ export default function IndexPopup() {
       </div>
 
       <div className="space-y-4">
+        {/* Phase 9: Scope Selector */}
+        <div className="p-3 mb-2 rounded-xl bg-zinc-800/40 border border-zinc-700/50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest pl-1">Application Scope</span>
+          </div>
+          <div className="flex gap-2 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800/80">
+            <button
+              onClick={() => setGlobalScope(true)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-bold rounded-md uppercase tracking-wider transition-all duration-200 ${globalScope ? 'bg-indigo-500 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
+            >
+              <Globe className="w-3 h-3" /> Global
+            </button>
+            <button
+              onClick={() => setGlobalScope(false)}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-bold rounded-md uppercase tracking-wider transition-all duration-200 ${!globalScope ? 'bg-amber-500 text-white shadow-md' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'}`}
+            >
+              <Lock className="w-3 h-3" /> Local
+            </button>
+          </div>
+          <p className="text-[9px] text-zinc-500 mt-2 leading-relaxed px-1">
+            {globalScope ? "Active modes auto-apply to all new tabs and websites." : "Active modes only apply when manually toggled on this exact page."}
+          </p>
+        </div>
+
         <div className="space-y-2">
           <ToggleRow
             icon={<Type className="w-5 h-5 text-indigo-400" />}
