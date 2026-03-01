@@ -6,3 +6,9 @@ edge-backend/__pycache__/
 *.pyc
 .env
 .DS_Store
+
+# Hackathon Docs
+HACKATHON_MISSION.md
+task.md
+walkthrough.md
+CHANGELOG.md
