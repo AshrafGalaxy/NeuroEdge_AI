@@ -118,19 +118,19 @@ export default function IndexPopup() {
       {/* Phase 2: Simplification History */}
       {history && history.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest pl-1 mb-2">Recent Simplifications</h3>
-          <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1 pb-1">
+          <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest pl-1 mb-2.5">Recent Simplifications</h3>
+          <div className="space-y-3 max-h-[160px] overflow-y-auto pr-1 pb-1 pt-1 custom-scrollbar">
             {history.map((item, idx) => {
               let hostname = item.url;
               try { hostname = new URL(item.url).hostname } catch (e) { }
               return (
-                <div key={idx} className="bg-zinc-800/40 border border-zinc-700/50 p-2.5 rounded-lg text-left shadow-sm">
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-[9px] text-zinc-500 font-medium truncate" title={item.url}>{hostname}</span>
-                    <span className="text-[9px] text-zinc-600">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <div key={idx} className="bg-zinc-800/40 border border-zinc-700/50 p-3 rounded-[12px] text-left shadow-sm hover:border-zinc-600 transition-colors duration-300">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[10px] text-zinc-400 font-semibold truncate bg-zinc-900/50 px-1.5 py-0.5 rounded border border-zinc-800" title={item.url}>{hostname}</span>
+                    <span className="text-[9px] text-zinc-500 font-medium">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
-                  <p className="text-[11px] text-zinc-300 line-clamp-2 italic opacity-90 mb-2 border-l-2 border-zinc-600 pl-2 leading-relaxed">"{item.original}"</p>
-                  <div className="text-[11px] text-emerald-300 font-medium bg-emerald-500/10 p-2 rounded shadow-inner leading-relaxed">
+                  <p className="text-[12px] text-zinc-300 line-clamp-2 italic opacity-95 mb-2.5 border-l-2 border-zinc-600/50 pl-2.5 leading-relaxed font-medium">"{item.original}"</p>
+                  <div className="text-[11.5px] text-emerald-300 font-semibold bg-emerald-500/10 p-2.5 rounded-lg border border-emerald-500/10 shadow-inner leading-relaxed">
                     ✨ {item.simplified}
                   </div>
                 </div>
@@ -157,23 +157,23 @@ export default function IndexPopup() {
 
 function ToggleRow({ icon, title, description, state, setState, activeColor }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-800 border border-zinc-700 transition-all duration-200 hover:bg-zinc-700/80">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-zinc-900 border border-zinc-800 rounded-lg shadow-sm">
+    <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-800/60 border border-zinc-700/60 transition-all duration-300 hover:bg-zinc-700 hover:border-zinc-600 hover:shadow-lg group">
+      <div className="flex items-center gap-3.5">
+        <div className="p-2.5 bg-zinc-900 border border-zinc-700/80 rounded-[10px] shadow-sm group-hover:scale-105 transition-transform duration-300">
           {icon}
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
-          <p className="text-[11px] text-zinc-400 mt-0.5">{description}</p>
+          <h2 className="text-[13px] font-bold text-zinc-100 tracking-wide">{title}</h2>
+          <p className="text-[11px] text-zinc-400/90 mt-0.5 font-medium">{description}</p>
         </div>
       </div>
 
       <Switch.Root
-        className={`w-[42px] h-[24px] bg-zinc-700 rounded-full relative outline-none cursor-pointer focus:ring-2 transition-colors duration-200 shadow-inner ${activeColor}`}
+        className={`w-[44px] h-[26px] bg-zinc-700 rounded-full relative outline-none cursor-pointer focus:ring-2 transition-colors duration-200 shadow-inner ${activeColor}`}
         checked={state}
         onCheckedChange={setState}
       >
-        <Switch.Thumb className="block w-[20px] h-[20px] bg-white rounded-full transition-transform duration-200 translate-x-0.5 will-change-transform data-[state=checked]:translate-x-[19px] shadow-sm" />
+        <Switch.Thumb className="block w-[22px] h-[22px] bg-white rounded-full transition-transform duration-200 translate-x-[2px] will-change-transform data-[state=checked]:translate-x-[20px] shadow-sm" />
       </Switch.Root>
     </div>
   )

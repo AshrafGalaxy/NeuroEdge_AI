@@ -11,35 +11,26 @@ const READER_OVERLAY_ID = "neuro-assist-reader-overlay"
 const ADHD_STYLE_ID = "neuro-assist-adhd-ruler"
 
 try {
-    storage.watch({
-        dyslexiaMode: async (c) => {
+    const handleStorageChange = async (key: string, newValue: any, updater: (val: any) => void) => {
+        try {
+            if (!chrome?.runtime?.id) throw new Error("Context invalidated");
             const scope = await storage.get<boolean>("globalScope");
             if (scope === false && document.visibilityState !== "visible") return;
-            toggleDyslexiaMode(c.newValue)
-        },
-        dyslexiaFont: async () => {
-            const scope = await storage.get<boolean>("globalScope");
-            if (scope === false && document.visibilityState !== "visible") return;
-            updateDyslexiaStyle()
-        },
-        dyslexiaWeight: async () => {
-            const scope = await storage.get<boolean>("globalScope");
-            if (scope === false && document.visibilityState !== "visible") return;
-            updateDyslexiaStyle()
-        },
-        adhdMode: async (c) => {
-            const scope = await storage.get<boolean>("globalScope");
-            if (scope === false && document.visibilityState !== "visible") return;
-            toggleBionicReading(c.newValue)
-        },
-        readabilityMode: async (c) => {
-            const scope = await storage.get<boolean>("globalScope");
-            if (scope === false && document.visibilityState !== "visible") return;
-            toggleReadabilityMode(c.newValue)
+            updater(newValue);
+        } catch (err) {
+            console.warn(`Neuro-Assist: Extension updated. Please refresh the page to use ${key}.`);
         }
-    })
+    };
+
+    storage.watch({
+        dyslexiaMode: (c) => handleStorageChange("dyslexiaMode", c.newValue, toggleDyslexiaMode),
+        dyslexiaFont: (c) => handleStorageChange("dyslexiaFont", c.newValue, updateDyslexiaStyle),
+        dyslexiaWeight: (c) => handleStorageChange("dyslexiaWeight", c.newValue, updateDyslexiaStyle),
+        adhdMode: (c) => handleStorageChange("adhdMode", c.newValue, toggleBionicReading),
+        readabilityMode: (c) => handleStorageChange("readabilityMode", c.newValue, toggleReadabilityMode)
+    });
 } catch (e) {
-    console.warn("Storage watch failed, context may be invalid:", e);
+    console.warn("Neuro-Assist Storage watch failed. Extension context may be invalid. Please refresh.", e);
 }
 
 window.addEventListener("load", async () => {
@@ -226,35 +217,25 @@ async function updateDyslexiaStyle() {
         document.head.appendChild(styleEl);
     }
 
+    try {
+        const regularFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Regular.otf")})`, { style: 'normal', weight: '400' });
+        const italicFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Italic.otf")})`, { style: 'italic', weight: '400' });
+        const boldFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Bold.otf")})`, { style: 'normal', weight: '700' });
+        const boldItalicFont = new FontFace('OpenDyslexicLocal', `url(${chrome.runtime.getURL("assets/fonts/OpenDyslexic-BoldItalic.otf")})`, { style: 'italic', weight: '700' });
+
+        await Promise.all([regularFont.load(), italicFont.load(), boldFont.load(), boldItalicFont.load()]);
+
+        document.fonts.add(regularFont);
+        document.fonts.add(italicFont);
+        document.fonts.add(boldFont);
+        document.fonts.add(boldItalicFont);
+    } catch (fontErr) {
+        console.warn("Neuro-Assist: Native FontFace API loading failed.", fontErr);
+    }
+
     styleEl.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap');
       
-      /* Phase 10: Localizing OpenDyslexic Off-Grid Assets */
-      @font-face {
-        font-family: 'OpenDyslexicLocal';
-        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Regular.otf")}') format('opentype');
-        font-weight: 400;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'OpenDyslexicLocal';
-        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Italic.otf")}') format('opentype');
-        font-weight: 400;
-        font-style: italic;
-      }
-      @font-face {
-        font-family: 'OpenDyslexicLocal';
-        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-Bold.otf")}') format('opentype');
-        font-weight: 700;
-        font-style: normal;
-      }
-      @font-face {
-        font-family: 'OpenDyslexicLocal';
-        src: url('${chrome.runtime.getURL("assets/fonts/OpenDyslexic-BoldItalic.otf")}') format('opentype');
-        font-weight: 700;
-        font-style: italic;
-      }
-
       * {
         animation: none !important;
         transition: none !important;
