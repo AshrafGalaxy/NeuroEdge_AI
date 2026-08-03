@@ -2,7 +2,6 @@
 
 <div align="center">
   <h3>A zero-telemetry, privacy-first cognitive accessibility shield powered by AMD Edge Computing.</h3>
-  <p><i>Submission for the AMD Slingshot Hackathon</i></p>
 </div>
 
 ---
@@ -38,11 +37,53 @@ An algorithmic `TreeWalker` matrix parses web paragraphs instantly, anchoring he
 
 ---
 
+## 🏗️ Architecture Diagram
+
+```mermaid
+flowchart LR
+    U[User in Chrome/Edge] --> E[Neuro-Assist Extension
+Plasmo + React + TypeScript]
+
+    E --> C1[Content Scripts
+DOM analysis + text selection]
+    E --> C2[Accessibility Engine
+Typography + Bionic styling]
+    E --> S[@plasmohq/storage
+Settings + session state]
+
+    C1 --> API[Local FastAPI backend
+Python]
+    API --> O[Ollama
+phi3:mini]
+    O --> API
+    API --> C1
+
+    C1 --> R[Simplified text response]
+    C2 --> R
+    R --> U
+
+    subgraph P[On-device privacy boundary]
+      E
+      C1
+      C2
+      S
+      API
+      O
+      R
+    end
+```
+
+## 🖼️ Visual Architecture (Excalidraw Style)
+
+![Neuro-Assist visual architecture overview](docs/assets/architecture-excalidraw.svg)
+
+*Quick visual overview of the local, privacy-first Neuro-Assist request and response flow.*
+
 ## 🛠️ Architecture & Tech Stack
 
 - **Frontend Core:** Plasmo Chrome Extension Framework (React 18, TypeScript).
 - **Aesthetics Layer:** Custom Tailwind CSS (v4) Glassmorphism Dark Theme.
-- **Backend Inference:** Python 3 FastAPI + Localized Ollama distribution via AMD Edge Hardware.
+- **Backend Inference:** Python 3 FastAPI with local Ollama (`phi3:mini`).
 - **Memory Management:** `@plasmohq/storage` cross-tab synchronized listeners.
 
 ---
@@ -98,4 +139,3 @@ npm run build
 
 `Neuro-Assist` requires strict `<all_urls>` permission to restructure webpages. However, no DOM data is ever transmitted outside of your isolated execution environment. All network requests are violently firewalled to `localhost:8000`.
 
-*Built for the AMD Slingshot Hackathon.*
