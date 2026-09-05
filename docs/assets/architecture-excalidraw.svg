@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">Neuro-Assist Edge AI Visual Architecture</title>
+  <desc id="desc">Visual architecture diagram showing browser user flow, extension components, local backend, Ollama model, and on-device privacy boundary.</desc>
+  <defs>
+    <style>
+      .title { font: 700 34px 'Segoe UI', Arial, sans-serif; fill: #111827; }
+      .label { font: 600 20px 'Segoe UI', Arial, sans-serif; fill: #111827; }
+      .text { font: 500 16px 'Segoe UI', Arial, sans-serif; fill: #1f2937; }
+      .small { font: 500 14px 'Segoe UI', Arial, sans-serif; fill: #374151; }
+      .box { stroke: #111827; stroke-width: 2.2; rx: 18; ry: 18; }
+      .edge { stroke: #334155; stroke-width: 2.6; fill: none; marker-end: url(#arrow); }
+      .privacy { stroke: #10b981; stroke-width: 3; stroke-dasharray: 10 8; fill: #ecfdf5; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L12,4 L0,8 z" fill="#334155" />
+    </marker>
+  </defs>
+
+  <text x="700" y="58" text-anchor="middle" class="title">Neuro-Assist Edge AI — Visual Architecture</text>
+
+  <rect x="60" y="95" width="1280" height="760" class="privacy" />
+  <text x="90" y="130" class="label" fill="#047857">On-device privacy boundary (local only)</text>
+
+  <rect x="110" y="220" width="280" height="120" class="box" fill="#fef3c7" />
+  <text x="250" y="266" text-anchor="middle" class="label">User</text>
+  <text x="250" y="296" text-anchor="middle" class="text">Chrome / Edge</text>
+
+  <rect x="450" y="190" width="370" height="190" class="box" fill="#dbeafe" />
+  <text x="635" y="232" text-anchor="middle" class="label">Neuro-Assist Extension</text>
+  <text x="635" y="262" text-anchor="middle" class="text">Plasmo + React + TypeScript</text>
+
+  <rect x="455" y="420" width="290" height="140" class="box" fill="#e0e7ff" />
+  <text x="600" y="462" text-anchor="middle" class="label">Content Scripts</text>
+  <text x="600" y="492" text-anchor="middle" class="text">DOM analysis</text>
+  <text x="600" y="516" text-anchor="middle" class="text">Text selection</text>
+
+  <rect x="780" y="420" width="290" height="140" class="box" fill="#ede9fe" />
+  <text x="925" y="462" text-anchor="middle" class="label">Accessibility Engine</text>
+  <text x="925" y="492" text-anchor="middle" class="text">Typography styling</text>
+  <text x="925" y="516" text-anchor="middle" class="text">Bionic reading</text>
+
+  <rect x="590" y="610" width="350" height="110" class="box" fill="#dcfce7" />
+  <text x="765" y="652" text-anchor="middle" class="label">@plasmohq/storage</text>
+  <text x="765" y="682" text-anchor="middle" class="text">Settings + state layer</text>
+
+  <rect x="1070" y="265" width="240" height="140" class="box" fill="#fee2e2" />
+  <text x="1190" y="308" text-anchor="middle" class="label">FastAPI Backend</text>
+  <text x="1190" y="338" text-anchor="middle" class="text">Python (local)</text>
+
+  <rect x="1065" y="470" width="250" height="120" class="box" fill="#ffedd5" />
+  <text x="1190" y="513" text-anchor="middle" class="label">Ollama</text>
+  <text x="1190" y="543" text-anchor="middle" class="text">phi3:mini</text>
+
+  <path d="M390 280 L450 280" class="edge" />
+  <text x="420" y="265" text-anchor="middle" class="small">Interacts</text>
+
+  <path d="M635 380 L635 420" class="edge" />
+  <path d="M820 280 L1070 325" class="edge" />
+  <path d="M1070 520 L745 520" class="edge" />
+  <text x="896" y="503" text-anchor="middle" class="small">Simplified text response</text>
+
+  <path d="M1190 405 L1190 470" class="edge" />
+  <path d="M1065 545 L950 545" class="edge" />
+  <path d="M745 480 L780 480" class="edge" />
+  <path d="M925 560 L925 610" class="edge" />
+  <path d="M600 560 L600 610" class="edge" />
+
+  <path d="M780 300 L880 300 L880 420" class="edge" />
+  <path d="M540 380 L500 380 L500 420" class="edge" />
+
+  <path d="M780 240 L1020 240 L1020 325 L1070 325" class="edge" />
+  <text x="930" y="225" text-anchor="middle" class="small">Request simplification</text>
+
+  <path d="M470 520 L290 520 L290 340" class="edge" />
+  <text x="348" y="505" text-anchor="middle" class="small">Readable content returns to user</text>
+</svg>
